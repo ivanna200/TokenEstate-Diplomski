@@ -1,0 +1,21 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Environment varijable - privatni kljucevi, nikad na git
+.env
+.env.local
+
+# Hardhat generisani fajlovi
+artifacts/
+cache/
+typechain-types/
+
+# Frontend build
+frontend/dist/
+frontend/build/
+
+# VS Code / OS
+.vscode/
+.DS_Store
+Thumbs.db
