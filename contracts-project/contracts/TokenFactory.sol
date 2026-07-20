@@ -26,6 +26,20 @@ contract TokenFactory is Ownable {
         propertyNFT = PropertyNFT(_propertyNFT);
     }
 
+    /// @notice Registruje novu nekretninu (mint NFT) u ime administratora platforme.
+    /// TokenFactory je vlasnik PropertyNFT ugovora (vlasništvo je preneseno prilikom
+    /// deploymenta), pa samo TokenFactory moze pozvati mintProperty na PropertyNFT-u.
+    /// Ova funkcija je "posrednik" - i dalje je zasticena onlyOwner, pa je samo
+    /// administrator platforme (vlasnik TokenFactory-a) moze pozvati.
+    function registerProperty(
+        address to,
+        string calldata location,
+        uint256 valuationInWei,
+        string calldata metadataURI
+    ) external onlyOwner returns (uint256 tokenId) {
+        return propertyNFT.mintProperty(to, location, valuationInWei, metadataURI);
+    }
+
     /// @notice Kreira ERC-20 token za nekretninu koja je već registrovana kao NFT.
     /// @param propertyId ID nekretnine (tokenId u PropertyNFT ugovoru)
     /// @param name_ naziv tokena, npr. "TokenEstate - Stan Banja Luka Centar"
