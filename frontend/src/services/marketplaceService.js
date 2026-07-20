@@ -6,10 +6,13 @@ export function getMarketplaceContract(signerOrProvider) {
   return new ethers.Contract(CONTRACT_ADDRESSES.Marketplace, MarketplaceArtifact.abi, signerOrProvider);
 }
 
-export async function createListing(signer, { tokenAddress, amount, pricePerTokenInEth }) {
+// overrides (npr. { nonce: 6 }) - vidi napomenu u propertyTokenService.js.
+// Neophodno da se izbjegne "nonce too low" greska kada createListing ide
+// odmah nakon approve transakcije u istom korisnickom toku.
+export async function createListing(signer, { tokenAddress, amount, pricePerTokenInEth }, overrides = {}) {
   const contract = getMarketplaceContract(signer);
   const pricePerToken = ethers.parseEther(String(pricePerTokenInEth));
-  const tx = await contract.createListing(tokenAddress, amount, pricePerToken);
+  const tx = await contract.createListing(tokenAddress, amount, pricePerToken, overrides);
   return tx.wait();
 }
 

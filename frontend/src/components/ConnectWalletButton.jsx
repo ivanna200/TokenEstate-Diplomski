@@ -1,8 +1,5 @@
 import { useWallet } from "../hooks/useWallet";
-
-function shortenAddress(address) {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
+import { shortenAddress, formatEth } from "../utils/format";
 
 export function ConnectWalletButton() {
   const { account, accounts, selectedAccountIndex, setSelectedAccountIndex, balance, isConnecting, error } = useWallet();
@@ -12,7 +9,7 @@ export function ConnectWalletButton() {
   }
 
   if (isConnecting) {
-    return <div className="wallet-badge">Povezivanje...</div>;
+    return <div className="wallet-badge">Povezivanje na lokalnu mrežu...</div>;
   }
 
   return (
@@ -21,6 +18,7 @@ export function ConnectWalletButton() {
         className="wallet-select"
         value={selectedAccountIndex}
         onChange={(e) => setSelectedAccountIndex(Number(e.target.value))}
+        aria-label="Izaberi nalog"
       >
         {accounts.map((acc, idx) => (
           <option key={acc.address} value={idx}>
@@ -30,7 +28,7 @@ export function ConnectWalletButton() {
       </select>
       <div className="wallet-info">
         <span className="wallet-address">{shortenAddress(account.address)}</span>
-        <span className="wallet-balance">{balance ? `${Number(balance).toFixed(2)} ETH` : "—"}</span>
+        <span className="wallet-balance">{balance ? `${formatEth(balance, 2)} ETH` : "—"}</span>
       </div>
     </div>
   );
