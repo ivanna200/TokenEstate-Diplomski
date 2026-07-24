@@ -4,6 +4,7 @@ import { useProperties } from "../hooks/useProperties";
 import { useToast } from "../hooks/useToast";
 import { PropertyCard } from "../components/PropertyCard";
 import { mintProperty } from "../services/propertyNFTService";
+import { opisiGresku } from "../utils/errors";
 
 export function HomePage({ onSelectProperty }) {
   const { signer, account } = useWallet();
@@ -31,7 +32,7 @@ export function HomePage({ onSelectProperty }) {
       await reload();
       showToast("Nekretnina je uspješno registrovana.", "success");
     } catch (err) {
-      showToast("Registracija nije uspjela: " + extractErrorMessage(err), "error");
+      showToast(opisiGresku(err), "error");
     } finally {
       setIsSubmitting(false);
       isSubmittingRef.current = false;
@@ -77,14 +78,8 @@ export function HomePage({ onSelectProperty }) {
         </div>
       )}
       {!isLoading && !error && properties.length === 0 && (
-        <p className="muted">Još nema registrovanih nekretnina. Ako si administrator, registruj prvu iznad.</p>
+        <p className="muted">Još nema registrovanih nekretnina. Ako ste administrator, registrujte prvu iznad.</p>
       )}
     </div>
   );
-}
-
-function extractErrorMessage(err) {
-  if (err?.reason) return err.reason;
-  if (err?.shortMessage) return err.shortMessage;
-  return err?.message ?? "Nepoznata greška.";
 }

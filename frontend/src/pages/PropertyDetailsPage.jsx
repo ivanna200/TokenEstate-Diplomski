@@ -8,6 +8,8 @@ import { fetchTokenSummary, depositRevenue, withdrawEarnings, approveMarketplace
 import { createListing } from "../services/marketplaceService";
 import { CONTRACT_ADDRESSES } from "../contracts/addresses";
 import { formatEth } from "../utils/format";
+import { opisiGresku } from "../utils/errors";
+import { TransactionHistory } from "../components/TransactionHistory";
 
 export function PropertyDetailsPage({ tokenId, onBack }) {
   const { provider, signer, account } = useWallet();
@@ -18,6 +20,7 @@ export function PropertyDetailsPage({ tokenId, onBack }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
+  const [osvjeziIstoriju, setOsvjeziIstoriju] = useState(0);
   const isSubmittingRef = useRef(false);
 
   const isAdmin = account.label === "Administrator platforme";
@@ -55,9 +58,10 @@ export function PropertyDetailsPage({ tokenId, onBack }) {
     try {
       await tokenizeProperty(signer, { propertyId: tokenId, ...tokenizeForm });
       await load();
+      setOsvjeziIstoriju((n) => n + 1);
       showToast("Nekretnina je uspješno tokenizovana.", "success");
     } catch (err) {
-      showToast("Tokenizacija nije uspjela: " + extractErrorMessage(err), "error");
+      showToast(opisiGresku(err), "error");
     } finally {
       setPendingAction(null);
       isSubmittingRef.current = false;
@@ -74,9 +78,10 @@ export function PropertyDetailsPage({ tokenId, onBack }) {
       await depositRevenue(signer, tokenAddress, revenueAmount);
       setRevenueAmount("");
       await load();
+      setOsvjeziIstoriju((n) => n + 1);
       showToast("Prihod je uspješno uplaćen.", "success");
     } catch (err) {
-      showToast("Uplata prihoda nije uspjela: " + extractErrorMessage(err), "error");
+      showToast(opisiGresku(err), "error");
     } finally {
       setPendingAction(null);
       isSubmittingRef.current = false;
@@ -90,9 +95,10 @@ export function PropertyDetailsPage({ tokenId, onBack }) {
     try {
       await withdrawEarnings(signer, tokenAddress);
       await load();
+      setOsvjeziIstoriju((n) => n + 1);
       showToast("Prihod je uspješno povučen.", "success");
     } catch (err) {
-      showToast("Povlačenje nije uspjelo: " + extractErrorMessage(err), "error");
+      showToast(opisiGresku(err), "error");
     } finally {
       setPendingAction(null);
       isSubmittingRef.current = false;
@@ -106,12 +112,9 @@ export function PropertyDetailsPage({ tokenId, onBack }) {
     isSubmittingRef.current = true;
     setPendingAction("list");
     try {
-      // Eksplicitno racunamo nonce za obje transakcije unaprijed, umjesto da
-      // se oslanjamo na ethers.js da automatski pogodi nonce za createListing.
-      // Ovo izbjegava poznat problem keširanja nonce vrijednosti u ethers.js
-      // kada se dvije transakcije istog naloga salju u brzom nizu (npr. na
-      // brzoj lokalnoj mrezi), gdje druga transakcija moze "upecati" zastarjelu
-      // keširanu vrijednost umjesto da pita mrezu za svjez broj.
+      // Redni brojevi transakcija racunaju se unaprijed, da bi se izbjegao
+      // problem kesiranja te vrijednosti u biblioteci ethers.js pri dvije
+      // uzastopne transakcije istog naloga.
       const startNonce = await signer.getNonce();
       await approveMarketplace(
         signer, tokenAddress, CONTRACT_ADDRESSES.Marketplace, listForm.amount,
@@ -124,7 +127,7 @@ export function PropertyDetailsPage({ tokenId, onBack }) {
       setListForm({ amount: "", price: "" });
       showToast("Oglas je uspješno kreiran na Marketplace-u.", "success");
     } catch (err) {
-      showToast("Kreiranje oglasa nije uspjelo: " + extractErrorMessage(err), "error");
+      showToast(opisiGresku(err), "error");
     } finally {
       setPendingAction(null);
       isSubmittingRef.current = false;
@@ -167,60 +170,60 @@ export function PropertyDetailsPage({ tokenId, onBack }) {
       )}
 
       {property.isTokenized && tokenSummary && (
-        <div className="token-panel">
-          <h3 className="section-title">{tokenSummary.name} ({tokenSummary.symbol})</h3>
-          <div className="token-stats">
-            <div><span className="muted">Ukupno udjela</span><br />{tokenSummary.totalSupply.toString()}</div>
-            <div><span className="muted">Tvoji udjeli</span><br />{tokenSummary.balance.toString()}</div>
-            <div><span className="muted">Neisplaćeni prihod</span><br />{formatEth(ethers.formatEther(tokenSummary.earnings))} ETH</div>
+        <>
+          <div className="token-panel">
+            <h3 className="section-title">{tokenSummary.name} ({tokenSummary.symbol})</h3>
+            <div className="token-stats">
+              <div><span className="muted">Ukupno udjela</span><br />{tokenSummary.totalSupply.toString()}</div>
+              <div><span className="muted">Vaši udjeli</span><br />{tokenSummary.balance.toString()}</div>
+              <div><span className="muted">Neisplaćeni prihod</span><br />{formatEth(ethers.formatEther(tokenSummary.earnings))} ETH</div>
+            </div>
+
+            <button
+              className="btn-primary"
+              onClick={handleWithdraw}
+              disabled={tokenSummary.earnings === 0n || pendingAction === "withdraw"}
+            >
+              {pendingAction === "withdraw" ? "Povlačenje u toku..." : "Povuci prihod"}
+            </button>
+
+            {isAdmin && (
+              <form className="mint-form" onSubmit={handleDeposit}>
+                <h4 className="section-title">Uplati prihod (npr. zakupninu)</h4>
+                <div className="mint-form__row">
+                  <input placeholder="Iznos (ETH)" type="number" step="0.01" min="0" value={revenueAmount}
+                    onChange={(e) => setRevenueAmount(e.target.value)}
+                    disabled={pendingAction === "deposit"} required />
+                  <button className="btn-primary" type="submit" disabled={pendingAction === "deposit"}>
+                    {pendingAction === "deposit" ? "Uplata u toku..." : "Uplati"}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {tokenSummary.balance > 0n && (
+              <form className="mint-form" onSubmit={handleList}>
+                <h4 className="section-title">Izlistaj udjele na Marketplace</h4>
+                <div className="mint-form__row">
+                  <input placeholder="Broj udjela" type="number" min="1" max={tokenSummary.balance.toString()} value={listForm.amount}
+                    onChange={(e) => setListForm({ ...listForm, amount: e.target.value })}
+                    disabled={pendingAction === "list"} required />
+                  <input placeholder="Cijena po udjelu (ETH)" type="number" step="0.001" min="0" value={listForm.price}
+                    onChange={(e) => setListForm({ ...listForm, price: e.target.value })}
+                    disabled={pendingAction === "list"} required />
+                  <button className="btn-primary" type="submit" disabled={pendingAction === "list"}>
+                    {pendingAction === "list" ? "Izlistavanje u toku..." : "Izlistaj"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
-          <button
-            className="btn-primary"
-            onClick={handleWithdraw}
-            disabled={tokenSummary.earnings === 0n || pendingAction === "withdraw"}
-          >
-            {pendingAction === "withdraw" ? "Povlačenje u toku..." : "Povuci prihod"}
-          </button>
-
-          {isAdmin && (
-            <form className="mint-form" onSubmit={handleDeposit}>
-              <h4 className="section-title">Uplati prihod (npr. zakupninu)</h4>
-              <div className="mint-form__row">
-                <input placeholder="Iznos (ETH)" type="number" step="0.01" min="0" value={revenueAmount}
-                  onChange={(e) => setRevenueAmount(e.target.value)}
-                  disabled={pendingAction === "deposit"} required />
-                <button className="btn-primary" type="submit" disabled={pendingAction === "deposit"}>
-                  {pendingAction === "deposit" ? "Uplata u toku..." : "Uplati"}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {tokenSummary.balance > 0n && (
-            <form className="mint-form" onSubmit={handleList}>
-              <h4 className="section-title">Izlistaj udjele na Marketplace</h4>
-              <div className="mint-form__row">
-                <input placeholder="Broj udjela" type="number" min="1" max={tokenSummary.balance.toString()} value={listForm.amount}
-                  onChange={(e) => setListForm({ ...listForm, amount: e.target.value })}
-                  disabled={pendingAction === "list"} required />
-                <input placeholder="Cijena po udjelu (ETH)" type="number" step="0.001" min="0" value={listForm.price}
-                  onChange={(e) => setListForm({ ...listForm, price: e.target.value })}
-                  disabled={pendingAction === "list"} required />
-                <button className="btn-primary" type="submit" disabled={pendingAction === "list"}>
-                  {pendingAction === "list" ? "Izlistavanje u toku..." : "Izlistaj"}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
+          <div className="token-panel">
+            <TransactionHistory key={osvjeziIstoriju} tokenAddress={tokenAddress} />
+          </div>
+        </>
       )}
     </div>
   );
-}
-
-function extractErrorMessage(err) {
-  if (err?.reason) return err.reason;
-  if (err?.shortMessage) return err.shortMessage;
-  return err?.message ?? "Nepoznata greška.";
 }

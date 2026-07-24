@@ -7,10 +7,11 @@ Diplomski rad — implementacija Web3 platforme koja omogućava tokenizaciju nek
 ## Sadržaj
 
 - [Opis projekta](#opis-projekta)
+- [Funkcionalnosti](#funkcionalnosti)
 - [Arhitektura](#arhitektura)
 - [Struktura repozitorijuma](#struktura-repozitorijuma)
 - [Tehnologije](#tehnologije)
-- [Pokretanje projekta (korak po korak)](#pokretanje-projekta-korak-po-korak)
+- [Pokretanje projekta](#pokretanje-projekta)
 - [Testiranje pametnih ugovora](#testiranje-pametnih-ugovora)
 - [Gas i sigurnosna analiza](#gas-i-sigurnosna-analiza)
 - [Demo nalozi](#demo-nalozi)
@@ -19,12 +20,21 @@ Diplomski rad — implementacija Web3 platforme koja omogućava tokenizaciju nek
 ## Opis projekta
 
 Sistem omogućava:
+
 - **Registraciju nekretnine** kao NFT-a (ERC-721) — jedinstveni identitet imovine na blockchainu
 - **Tokenizaciju** nekretnine u ERC-20 udjele — frakciono vlasništvo (npr. 1000 tokena = 100% vlasništva)
-- **Kupoprodaju udjela** preko ugrađenog Marketplace ugovora
+- **Kupoprodaju udjela** preko ugrađenog Marketplace ugovora, uz mogućnost otkazivanja oglasa
 - **Automatsku, proporcionalnu distribuciju prihoda** (npr. zakupnine) svim vlasnicima udjela, srazmjerno njihovom broju tokena u trenutku uplate
+- **Pregled istorije transakcija** za svaku nekretninu, rekonstruisan iz događaja zabilježenih na blockchainu
 
 Aplikacija je potpuno samostalna i radi lokalno, bez potrebe za internetom, MetaMask-om ili eksternim testnet servisima — pogodna za demonstraciju u okviru odbrane diplomskog rada.
+
+## Funkcionalnosti
+
+| Uloga | Dostupne radnje |
+|---|---|
+| Administrator platforme | Registracija nekretnine, tokenizacija, uplata prihoda, prodaja i otkazivanje oglasa, preuzimanje prihoda |
+| Investitor | Kupovina udjela, prodaja i otkazivanje sopstvenih oglasa, preuzimanje prihoda |
 
 ## Arhitektura
 
@@ -33,7 +43,7 @@ Sistem se sastoji od tri sloja:
 1. **Pametni ugovori** (Solidity, `contracts-project/contracts/`)
    - `PropertyNFT.sol` — ERC-721, identitet nekretnine
    - `PropertyToken.sol` — ERC-20, udjeli + distribucija prihoda
-   - `TokenFactory.sol` — kreira PropertyToken za registrovanu nekretninu
+   - `TokenFactory.sol` — registracija nekretnina i kreiranje PropertyToken ugovora
    - `Marketplace.sol` — kupoprodaja udjela
 2. **Lokalna blockchain mreža** — Hardhat Network (simulirani Ethereum čvor)
 3. **Frontend** (React + ethers.js, `frontend/`) — korisnički interfejs koji direktno komunicira sa pametnim ugovorima
@@ -42,21 +52,23 @@ Sistem se sastoji od tri sloja:
 
 ```
 TokenEstate/
-├── contracts-project/       Pametni ugovori, testovi, deployment (Hardhat 3)
+├── contracts-project/        Pametni ugovori, testovi, deployment (Hardhat 3)
 │   ├── contracts/              Solidity izvorni kod
 │   ├── test/                   Mocha/Chai testovi (17 testova)
-│   ├── ignition/modules/       Deployment skripta (Hardhat Ignition)
+│   ├── scripts/                 Pomoćne skripte (kopiranje ABI fajlova)
+│   ├── ignition/modules/        Deployment modul (Hardhat Ignition)
 │   └── hardhat.config.ts
-├── frontend/                 React (Vite) aplikacija
+├── frontend/                  React (Vite) aplikacija
 │   └── src/
-│       ├── contracts/           ABI fajlovi i adrese ugovora
+│       ├── contracts/            ABI fajlovi i adrese ugovora
 │       ├── config/               Konfiguracija mreže i demo naloga
 │       ├── services/             Komunikacija sa blockchainom (ethers.js)
 │       ├── context/              React Context (wallet, notifikacije)
-│       ├── hooks/                 Prilagođeni React hooks
-│       ├── components/            UI komponente za ponovnu upotrebu
-│       └── pages/                 Ekrani aplikacije
-├── dokumentacija/            Prilozi za diplomski rad (gas i sigurnosna analiza)
+│       ├── hooks/                Prilagođeni React hooks
+│       ├── components/           UI komponente za ponovnu upotrebu
+│       ├── pages/                Ekrani aplikacije
+│       └── utils/                Formatiranje i obrada poruka o greškama
+├── dokumentacija/             Prilozi za diplomski rad
 └── README.md
 ```
 
@@ -66,12 +78,11 @@ TokenEstate/
 |---|---|
 | Pametni ugovori | Solidity 0.8.28, OpenZeppelin Contracts |
 | Razvojno okruženje | Hardhat 3 (Ignition za deployment, ugrađen gas reporter) |
-| Testiranje ugovora | Mocha, Chai, ethers.js |
+| Testiranje ugovora | Mocha, Chai, ethers.js (TypeScript) |
 | Sigurnosna analiza | Slither (statička analiza) |
-| Frontend | React 19 (Vite), ethers.js 6 |
-| Jezik | JavaScript (ESM) |
+| Frontend | React (Vite), ethers.js 6 |
 
-## Pokretanje projekta (korak po korak)
+## Pokretanje projekta
 
 Potrebno: Node.js (v20+), npm.
 
@@ -85,7 +96,22 @@ cd ../frontend
 npm install
 ```
 
-### 2. Pokretanje lokalne blockchain mreže
+### 2. Kompajliranje ugovora
+
+```bash
+cd contracts-project
+npm run build
+```
+
+Ova komanda kompajlira pametne ugovore i **automatski kopira ažurirane ABI fajlove** u frontend (`frontend/src/contracts/abis/`). Pokreće se nakon svake izmjene pametnih ugovora.
+
+Ako je potrebno samo kopirati ABI fajlove, bez ponovnog kompajliranja:
+
+```bash
+npm run copy-abis
+```
+
+### 3. Pokretanje lokalne blockchain mreže
 
 U prvom terminalu:
 
@@ -96,7 +122,7 @@ npx hardhat node
 
 Ostaviti ovaj terminal otvorenim tokom cijelog rada sa aplikacijom.
 
-### 3. Deployment pametnih ugovora
+### 4. Deployment pametnih ugovora
 
 U drugom terminalu:
 
@@ -105,9 +131,16 @@ cd contracts-project
 npx hardhat ignition deploy ignition/modules/TokenEstateModule.ts --network localhost
 ```
 
-Nakon deploymenta, ispisuju se adrese ugovora. **Ako se razlikuju od onih u `frontend/src/contracts/addresses.js`, potrebno je ažurirati taj fajl sa novim adresama.**
+Nakon deploymenta, ispisuju se adrese ugovora. **Ako se razlikuju od onih u `frontend/src/contracts/addresses.js`, potrebno je ažurirati taj fajl.**
 
-### 4. Pokretanje frontend aplikacije
+Za potpuno svjež deployment (nakon restarta mreže):
+
+```bash
+Remove-Item -Recurse -Force ignition\deployments\chain-31337
+npx hardhat ignition deploy ignition/modules/TokenEstateModule.ts --network localhost
+```
+
+### 5. Pokretanje frontend aplikacije
 
 U trećem terminalu:
 
@@ -135,10 +168,16 @@ npx hardhat test --gas-stats
 
 ## Gas i sigurnosna analiza
 
-Detaljni rezultati analize potrošnje gasa i statičke sigurnosne analize (Slither) dokumentovani su u prilogu, u folderu `dokumentacija/`:
+Detaljni rezultati analize potrošnje gasa i statičke sigurnosne analize (Slither) dokumentovani su u folderu `dokumentacija/`:
 
 - `TokenEstate_Gas_Analiza.docx`
 - `TokenEstate_Sigurnosna_Analiza.docx`
+
+Sigurnosna analiza pokreće se komandom (potreban Python i instaliran Slither):
+
+```bash
+slither contracts/PropertyToken.sol --solc-remaps "@openzeppelin=node_modules/@openzeppelin"
+```
 
 ## Demo nalozi
 
@@ -156,4 +195,5 @@ Privatni ključevi ovih naloga su **javno poznati Hardhat test ključevi** — k
 
 - Frontend koristi ugrađene test naloge umjesto MetaMask/WalletConnect integracije — svjesna odluka radi potpune samostalnosti demonstracije.
 - Prihod (npr. zakupnina) unosi se ručno kroz administratorski nalog — integracija sa spoljnim izvorom podataka (npr. Chainlink oracle) navedena je kao pravac budućeg razvoja.
-- ABI fajlovi u frontendu su kopija iz `contracts-project/artifacts/` — nakon svake izmjene pametnog ugovora potrebno je ručno ažurirati odgovarajući ABI fajl u `frontend/src/contracts/abis/`.
+- Sistem ne rješava pravnu vezu između digitalnog udjela i stvarnog, pravno priznatog vlasništva nad nekretninom.
+- Administrator platforme ima značajna ovlašćenja (registracija, tokenizacija, uplata prihoda), pa sistem zadržava određeni stepen centralizovane kontrole.

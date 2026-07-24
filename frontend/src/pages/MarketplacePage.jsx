@@ -7,14 +7,18 @@ export function MarketplacePage() {
   return (
     <div>
       <h2 className="section-title">Marketplace</h2>
-      {isLoading && <p className="muted">Učitavanje...</p>}
+      {isLoading && <p className="muted">Učitavanje oglasa...</p>}
       {error && <p className="error-text">{error}</p>}
-      <div className="listing-grid">
-        {listings.map((l) => (
-          <ListingCard key={l.listingId} listing={l} onPurchased={reload} />
-        ))}
-      </div>
-      {!isLoading && listings.length === 0 && <p className="muted">Trenutno nema aktivnih oglasa.</p>}
+      {!isLoading && !error && (
+        <div className="listing-grid">
+          {listings.map((l) => (
+            <ListingCard key={l.listingId} listing={l} onChanged={reload} />
+          ))}
+        </div>
+      )}
+      {!isLoading && !error && listings.length === 0 && (
+        <p className="muted">Trenutno nema aktivnih oglasa.</p>
+      )}
     </div>
   );
 }

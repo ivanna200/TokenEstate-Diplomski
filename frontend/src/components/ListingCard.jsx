@@ -2,30 +2,52 @@ import { useState, useRef } from "react";
 import { ethers } from "ethers";
 import { useWallet } from "../hooks/useWallet";
 import { useToast } from "../hooks/useToast";
-import { purchaseListing } from "../services/marketplaceService";
+import { purchaseListing, cancelListing } from "../services/marketplaceService";
 import { shortenAddress, formatEth } from "../utils/format";
+import { opisiGresku } from "../utils/errors";
 
-export function ListingCard({ listing, onPurchased }) {
-  const { signer } = useWallet();
+export function ListingCard({ listing, onChanged }) {
+  const { signer, account } = useWallet();
   const { showToast } = useToast();
-  const [isBuying, setIsBuying] = useState(false);
+  const [uToku, setUToku] = useState(null);
   const isSubmittingRef = useRef(false);
+
+  const jeMojOglas =
+    listing.seller.toLowerCase() === account.address.toLowerCase();
 
   async function handleBuy() {
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
-    setIsBuying(true);
+    setUToku("kupovina");
     try {
       await purchaseListing(signer, listing.listingId, listing.amount, listing.pricePerToken);
-      onPurchased();
+      onChanged();
       showToast("Kupovina je uspješno završena.", "success");
     } catch (err) {
-      showToast("Kupovina nije uspjela: " + (err?.reason ?? err?.shortMessage ?? err.message), "error");
+      showToast(opisiGresku(err), "error");
     } finally {
-      setIsBuying(false);
+      setUToku(null);
       isSubmittingRef.current = false;
     }
   }
+
+  async function handleCancel() {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setUToku("otkazivanje");
+    try {
+      await cancelListing(signer, listing.listingId);
+      onChanged();
+      showToast("Oglas je otkazan.", "success");
+    } catch (err) {
+      showToast(opisiGresku(err), "error");
+    } finally {
+      setUToku(null);
+      isSubmittingRef.current = false;
+    }
+  }
+
+  const ukupnaCijena = BigInt(listing.amount) * BigInt(listing.pricePerToken);
 
   return (
     <div className="listing-card">
@@ -36,12 +58,26 @@ export function ListingCard({ listing, onPurchased }) {
       <div className="listing-card__row listing-card__price">
         {formatEth(ethers.formatEther(listing.pricePerToken))} ETH / udio
       </div>
-      <div className="listing-card__seller">
-        Prodavac: {shortenAddress(listing.seller)}
+      <div className="listing-card__total">
+        Ukupno: {formatEth(ethers.formatEther(ukupnaCijena))} ETH
       </div>
-      <button className="btn-primary" onClick={handleBuy} disabled={isBuying}>
-        {isBuying ? "Kupovina u toku..." : "Kupi"}
-      </button>
+      <div className="listing-card__seller">
+        Prodavac: {jeMojOglas ? "vi" : shortenAddress(listing.seller)}
+      </div>
+
+      {jeMojOglas ? (
+        <button
+          className="btn-secondary"
+          onClick={handleCancel}
+          disabled={uToku !== null}
+        >
+          {uToku === "otkazivanje" ? "Otkazivanje..." : "Otkaži oglas"}
+        </button>
+      ) : (
+        <button className="btn-primary" onClick={handleBuy} disabled={uToku !== null}>
+          {uToku === "kupovina" ? "Kupovina u toku..." : "Kupi"}
+        </button>
+      )}
     </div>
   );
 }

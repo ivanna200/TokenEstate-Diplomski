@@ -192,3 +192,64 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.btn-secondary {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.listing-card__total {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  margin-bottom: 6px;
+}
+
+.history__list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.history__item {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-text-muted);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.history__item--izdavanje { border-left-color: var(--color-gold); }
+.history__item--prenos { border-left-color: #6E8FC4; }
+.history__item--uplata { border-left-color: var(--color-success); }
+.history__item--isplata { border-left-color: #C47ED1; }
+
+.history__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.history__title { font-size: 13px; font-weight: 600; }
+.history__time { font-size: 11px; color: var(--color-text-muted); font-family: var(--font-mono); }
+.history__desc { font-size: 13px; color: var(--color-gold); font-family: var(--font-mono); margin-top: 3px; }
+.history__meta { font-size: 11px; color: var(--color-text-muted); font-family: var(--font-mono); margin-top: 4px; }
+.history__block { opacity: 0.7; }
+.history__hash {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  opacity: 0.6;
+  margin-top: 2px;
+}
