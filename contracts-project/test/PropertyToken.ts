@@ -43,7 +43,7 @@ describe("PropertyToken", function () {
     expect(earnings2).to.equal(ethers.parseEther("4"));
   });
 
-  it("treba da omoguci investitoru da povuce svoj prihod, i saldo mu se nuli nakon toga", async function () {
+  it("treba da omoguci investitoru da povuce svoj prihod, i saldo mu se svede na nulu nakon toga", async function () {
     const { propertyToken, owner, investor1 } = await deployFixture();
 
     await propertyToken.transfer(investor1.address, 1000n); // investitor1 = 100% vlasnik
@@ -66,7 +66,7 @@ describe("PropertyToken", function () {
     expect(await propertyToken.earningsOf(investor1.address)).to.equal(0n);
   });
 
-  it("ne treba da izgubi pravo na ranije zaraceni prihod nakon prodaje tokena", async function () {
+  it("treba da sacuva pravo na ranije zaraceni prihod nakon prodaje tokena", async function () {
     const { propertyToken, owner, investor1, investor2 } = await deployFixture();
 
     await propertyToken.transfer(investor1.address, 1000n);

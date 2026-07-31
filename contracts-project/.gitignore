@@ -24,6 +24,9 @@
 # Hardhat coverage reports
 /coverage
 
+# Hardhat Ignition deployment artefakti (lokalni)
+ignition/deployments/
+
 # Gas snapshot files
 /.gas-snapshot
 
