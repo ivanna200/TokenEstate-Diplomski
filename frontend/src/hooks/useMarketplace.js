@@ -13,13 +13,15 @@ export function useMarketplace() {
       setIsLoading(true);
       setError(null);
       setListings(await fetchActiveListings(provider));
-    } catch (err) {
+    } catch {
       setError("Ne mogu učitati oglase.");
     } finally {
       setIsLoading(false);
     }
   }, [provider]);
 
+  // Ucitavanje pri prvom prikazu; reload je zasticen sa useCallback.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { reload(); }, [reload]);
 
   return { listings, isLoading, error, reload };

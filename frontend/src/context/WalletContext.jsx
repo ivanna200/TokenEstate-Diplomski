@@ -3,6 +3,8 @@ import { ethers } from "ethers";
 import { createProvider, createWalletFromPrivateKey } from "../services/providerService";
 import { DEMO_ACCOUNTS } from "../config/network";
 
+// Kontekst i provajder namjerno u istom fajlu — pravilo se tiče Fast Refresh-a, ne ispravnosti.
+// eslint-disable-next-line react-refresh/only-export-components
 export const WalletContext = createContext(null);
 
 export function WalletProvider({ children }) {
@@ -27,7 +29,7 @@ export function WalletProvider({ children }) {
         const wallet = createWalletFromPrivateKey(account.privateKey, provider);
         setSigner(wallet);
         await refreshBalance(account.address);
-      } catch (err) {
+      } catch {
         setError("Ne mogu se povezati na lokalnu mrežu. Provjeri da li 'npx hardhat node' radi.");
       } finally {
         setIsConnecting(false);

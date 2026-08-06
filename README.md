@@ -176,7 +176,10 @@ Detaljni rezultati analize potrošnje gasa i statičke sigurnosne analize (Slith
 Sigurnosna analiza pokreće se komandom (potreban Python i instaliran Slither):
 
 ```bash
+slither contracts/PropertyNFT.sol --solc-remaps "@openzeppelin=node_modules/@openzeppelin"
 slither contracts/PropertyToken.sol --solc-remaps "@openzeppelin=node_modules/@openzeppelin"
+slither contracts/TokenFactory.sol --solc-remaps "@openzeppelin=node_modules/@openzeppelin"
+slither contracts/Marketplace.sol --solc-remaps "@openzeppelin=node_modules/@openzeppelin"
 ```
 
 ## Demo nalozi

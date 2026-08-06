@@ -30,7 +30,7 @@ export function TransactionHistory({ tokenAddress }) {
         setGreska(null);
         const podaci = await fetchPropertyHistory(provider, tokenAddress);
         if (!ponisteno) setStavke(podaci);
-      } catch (err) {
+      } catch {
         if (!ponisteno) setGreska("Ne mogu učitati istoriju transakcija.");
       } finally {
         if (!ponisteno) setUcitava(false);

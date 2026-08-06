@@ -40,13 +40,15 @@ export function PropertyDetailsPage({ tokenId, onBack }) {
         setTokenAddress(null);
         setTokenSummary(null);
       }
-    } catch (err) {
+    } catch {
       setError("Ne mogu učitati nekretninu.");
     } finally {
       setIsLoading(false);
     }
   }, [provider, tokenId, account.address]);
 
+  // Ucitavanje pri prvom prikazu i pri promjeni naloga; load je zasticen sa useCallback.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   const [tokenizeForm, setTokenizeForm] = useState({ name: "", symbol: "", totalShares: "1000" });

@@ -1,5 +1,7 @@
 import { createContext, useState, useCallback } from "react";
 
+// Kontekst i provajder namjerno u istom fajlu — pravilo se tiče Fast Refresh-a, ne ispravnosti.
+// eslint-disable-next-line react-refresh/only-export-components
 export const ToastContext = createContext(null);
 
 let idCounter = 0;
